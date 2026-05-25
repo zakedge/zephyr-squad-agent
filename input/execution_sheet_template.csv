@@ -1,0 +1,4 @@
+test_case_key,status,evidence_file,comment
+QA-101,PASS,QA-101.png,Login test passed
+QA-102,FAIL,QA-102.png,Validation failed
+QA-103,BLOCKED,,Environment issue
