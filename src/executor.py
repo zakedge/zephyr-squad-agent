@@ -45,6 +45,16 @@ class ExecutionRunner:
 
                 status_id = map_status(status_text)
 
+                evidence_path = None
+
+                if evidence_file:
+                    evidence_path = self.evidence_dir / evidence_file
+
+                    if not evidence_path.exists():
+                        raise FileNotFoundError(
+                            f"Evidence file not found: {evidence_path}"
+                        )
+
                 if self.dry_run:
                     result["result"] = "DRY_RUN"
                     result["message"] = (
@@ -64,8 +74,7 @@ class ExecutionRunner:
                     comment=comment,
                 )
 
-                if evidence_file:
-                    evidence_path = self.evidence_dir / evidence_file
+                if evidence_path:
                     self.zephyr_client.upload_attachment(
                         execution_id=execution_id,
                         evidence_path=str(evidence_path),
