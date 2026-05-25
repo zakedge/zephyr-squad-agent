@@ -6,6 +6,7 @@ import pandas as pd
 from src.config import get_settings
 from src.excel_reader import read_execution_file
 from src.executor import ExecutionRunner
+from src.fake_zephyr_client import FakeZephyrClient
 from src.zephyr_client import ZephyrClient
 
 
@@ -36,12 +37,23 @@ def main() -> None:
         help="Preview updates without changing Zephyr Squad",
     )
 
+    parser.add_argument(
+        "--fake-local",
+        action="store_true",
+        help="Use a fake local Zephyr client. No Jira/Zephyr credentials required.",
+    )
+
     args = parser.parse_args()
 
-    settings = get_settings()
     records = read_execution_file(args.input)
 
-    client = ZephyrClient(settings)
+    if args.fake_local:
+        test_case_keys = [record["test_case_key"] for record in records]
+        client = FakeZephyrClient(test_case_keys)
+    else:
+        settings = get_settings()
+        client = ZephyrClient(settings)
+
     runner = ExecutionRunner(
         client,
         evidence_dir=args.evidence_dir,
