@@ -6,9 +6,15 @@ from src.zephyr_client import ZephyrClient
 
 
 class ExecutionRunner:
-    def __init__(self, zephyr_client: ZephyrClient, evidence_dir: str = "evidence"):
+    def __init__(
+        self,
+        zephyr_client: ZephyrClient,
+        evidence_dir: str = "evidence",
+        dry_run: bool = False,
+    ):
         self.zephyr_client = zephyr_client
         self.evidence_dir = Path(evidence_dir)
+        self.dry_run = dry_run
 
     def run(self, records: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         execution_lookup = self.zephyr_client.build_execution_lookup()
@@ -38,6 +44,19 @@ class ExecutionRunner:
                 result["execution_id"] = execution_id
 
                 status_id = map_status(status_text)
+
+                if self.dry_run:
+                    result["result"] = "DRY_RUN"
+                    result["message"] = (
+                        f"Would update execution {execution_id} "
+                        f"to status_id {status_id}"
+                    )
+
+                    if evidence_file:
+                        result["message"] += f" and upload evidence {evidence_file}"
+
+                    results.append(result)
+                    continue
 
                 self.zephyr_client.update_execution_status(
                     execution_id=execution_id,
