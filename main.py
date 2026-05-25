@@ -5,6 +5,7 @@ import pandas as pd
 
 from src.config import get_settings
 from src.excel_reader import read_execution_file
+from src.execution_listing import print_execution_summary
 from src.executor import ExecutionRunner
 from src.fake_zephyr_client import FakeZephyrClient
 from src.zephyr_client import ZephyrClient
@@ -15,7 +16,7 @@ def main() -> None:
 
     parser.add_argument(
         "--input",
-        required=True,
+        required=False,
         help="Path to CSV or Excel execution file",
     )
 
@@ -43,16 +44,31 @@ def main() -> None:
         help="Use a fake local Zephyr client. No Jira/Zephyr credentials required.",
     )
 
+    parser.add_argument(
+        "--list-executions",
+        action="store_true",
+        help="List executions from Zephyr cycle and exit",
+    )
+
     args = parser.parse_args()
 
-    records = read_execution_file(args.input)
+    if not args.input and not args.list_executions:
+        parser.error("--input is required unless --list-executions is used")
 
     if args.fake_local:
+        records = read_execution_file(args.input)
         test_case_keys = [record["test_case_key"] for record in records]
         client = FakeZephyrClient(test_case_keys)
     else:
         settings = get_settings()
         client = ZephyrClient(settings)
+
+    if args.list_executions:
+        executions = client.get_executions_for_cycle()
+        print_execution_summary(executions)
+        return
+
+    records = read_execution_file(args.input)
 
     runner = ExecutionRunner(
         client,
